@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ExcelJS from "exceljs";
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY as string;
 if (!API_KEY) {
   throw new Error("Falta la GEMINI_API_KEY en las variables de entorno");
 }
