@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     // PASO 9: RETORNAR ARCHIVO
     // ==========================================
     
-    return new NextResponse(excelBuffer, {
+    return new NextResponse(new Uint8Array(excelBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
