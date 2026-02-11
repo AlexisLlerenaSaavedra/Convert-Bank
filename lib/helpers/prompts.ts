@@ -25,7 +25,6 @@ export const promptClasificacion = `
     Responde ÚNICAMENTE en este formato JSON:
     {
     "tipo": "CREDITO" | "BANCO" | "INVALIDO",
-    "confianza": "alta" | "media" | "baja",
     "razon": "Explicación breve (máx 20 palabras)"
     }
 

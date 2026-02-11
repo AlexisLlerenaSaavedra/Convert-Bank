@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const prompt = clasificacion.tipo === "CREDITO" ? promptCredito : promptBanco;
     const tipoTexto = clasificacion.tipo === "CREDITO" ? "Tarjeta de Crédito" : "Extracto Bancario";
     
-    console.log(`📋 Tipo detectado: ${tipoTexto} (confianza: ${clasificacion.confianza})`);
+    console.log(`📋 Tipo detectado: ${tipoTexto}`);
     console.log(`🚀 Iniciando análisis completo con prompt de ${tipoTexto}...`);
 
     // ==========================================
