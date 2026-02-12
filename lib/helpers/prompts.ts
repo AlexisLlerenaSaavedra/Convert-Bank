@@ -1,35 +1,24 @@
 export const promptClasificacion = `
-    Analiza este documento PDF financiero y clasifícalo con precisión.
+Clasifica este PDF en UNA categoría:
 
-    TIPOS VÁLIDOS:
+1. CREDITO: resumen tarjeta crédito
+   Keywords: "cuota", "1/", "2/12", "vencimiento", "consumo", "tarjeta", "visa", "mastercard", "límite"
 
-    1. CREDITO (Resumen de Tarjeta de Crédito):
-    ✓ Contiene: consumos en comercios, cuotas (ej: "1/6"), fecha de vencimiento
-    ✓ Contiene: total a pagar, límite de crédito, intereses
-    ✓ Estructura: lista de compras con montos
+2. BANCO: extracto cuenta bancaria
+   Keywords: "débito", "crédito", "saldo", "CBU", "IBAN", "transferencia", "movimientos", "cuenta"
 
-    2. BANCO (Extracto de Cuenta Bancaria):
-    ✓ Contiene: débitos y créditos separados o combinados
-    ✓ Contiene: saldo (inicial/final), número de cuenta/CBU
-    ✓ Estructura: movimientos con columna de saldo corriente
+3. INVALIDO: otro documento (factura, recibo, contrato, inversión, etc.)
 
-    3. INVALIDO:
-    ✗ Facturas, recibos, contratos, estados de cuenta de inversión
-    ✗ Cualquier documento que NO sea resumen de crédito ni extracto bancario
+Analiza SOLO la primera página si es posible para clasificar más rápido.
 
-    IMPORTANTE:
-    - Si tiene "cuotas" (1/3, 2/12, etc.) → casi siempre es CREDITO
-    - Si tiene "saldo" que cambia con cada movimiento → casi siempre es BANCO
-    - Si no tiene ninguno de los indicadores anteriores → INVALIDO
+Responde SOLO este JSON sin markdown ni explicaciones adicionales:
+{"tipo":"CREDITO"|"BANCO"|"INVALIDO","razon":"max 8 palabras"}
 
-    Responde ÚNICAMENTE en este formato JSON:
-    {
-    "tipo": "CREDITO" | "BANCO" | "INVALIDO",
-    "razon": "Explicación breve (máx 20 palabras)"
-    }
-
-    NO incluyas markdown, ni comentarios, ni texto adicional. SOLO el JSON.
-    `;
+Ejemplos válidos:
+{"tipo":"CREDITO","razon":"tiene cuotas y vencimiento"}
+{"tipo":"BANCO","razon":"movimientos con débitos y créditos"}
+{"tipo":"INVALIDO","razon":"factura de servicios"}
+`;
 
 export const promptCredito = `
       Eres un experto en extracción de datos de resúmenes de tarjetas de crédito. Analiza este documento en CUATRO NIVELES.
