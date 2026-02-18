@@ -1,197 +1,197 @@
-export const promptClasificacion = `
-Clasifica este PDF en UNA categoría:
+    export const classificationPrompt = `
+Classify this PDF into ONE category:
 
-1. CREDITO: resumen tarjeta crédito
-   Keywords: "cuota", "1/", "2/12", "vencimiento", "consumo", "tarjeta", "visa", "mastercard", "límite"
+1. CREDIT: Credit card summary/statement
+   Keywords: "cuota", "1/", "2/12", "vencimiento" (due date), "consumo", "tarjeta", "visa", "mastercard", "limit"
 
-2. BANCO: extracto cuenta bancaria
-   Keywords: "débito", "crédito", "saldo", "CBU", "IBAN", "transferencia", "movimientos", "cuenta"
+2. BANK: Bank account statement
+   Keywords: "débito" (debit), "crédito" (credit), "saldo" (balance), "CBU", "IBAN", "transferencia", "movimientos", "cuenta"
 
-3. INVALIDO: otro documento (factura, recibo, contrato, inversión, etc.)
+3. INVALID: Any other document (invoice, receipt, contract, investment report, etc.)
 
-Analiza SOLO la primera página si es posible para clasificar más rápido.
+Analyze ONLY the first page if possible for faster classification.
 
-Responde SOLO este JSON sin markdown ni explicaciones adicionales:
-{"tipo":"CREDITO"|"BANCO"|"INVALIDO","razon":"max 8 palabras"}
+Reply ONLY with this JSON, no markdown, no additional explanations:
+{"type": "CREDIT"|"BANK"|"INVALID", "reason": "max 8 words"}
 
-Ejemplos válidos:
-{"tipo":"CREDITO","razon":"tiene cuotas y vencimiento"}
-{"tipo":"BANCO","razon":"movimientos con débitos y créditos"}
-{"tipo":"INVALIDO","razon":"factura de servicios"}
+Valid examples:
+{"type": "CREDIT", "reason": "contains installments and due date"}
+{"type": "BANK", "reason": "transactions with debits and credits"}
+{"type": "INVALID", "reason": "utility bill"}
 `;
 
-export const promptCredito = `
-      Eres un experto en extracción de datos de resúmenes de tarjetas de crédito. Analiza este documento en CUATRO NIVELES.
+export const creditPrompt = `
+      You are an expert in extracting data from credit card statements. Analyze this document in FOUR LEVELS.
 
-      NIVEL 0: DETECCIÓN DE CONTEXTO
-      - Detecta el idioma del documento (código ISO 639-1: es, en, zh, ja, pt, fr, de, etc.)
-      - Detecta la MONEDA PRINCIPAL del resumen (código ISO 4217: USD, EUR, ARS, CNY, JPY, BRL, etc.)
-      - Si hay múltiples monedas, identifica la principal y las secundarias.
+      LEVEL 0: CONTEXT DETECTION
+      - Detect the document language (ISO 639-1 code: es, en, zh, ja, pt, fr, de, etc.)
+      - Detect the MAIN CURRENCY of the statement (ISO 4217 code: USD, EUR, ARS, CNY, JPY, BRL, etc.)
+      - If multiple currencies exist, identify the main one and secondary ones.
 
-      NIVEL 1: METADATOS CLAVE
-      - Banco o emisor de la tarjeta (nombre completo)
-      - Fecha de Vencimiento del pago
-      - Total a Pagar (en todas las monedas presentes)
+      LEVEL 1: KEY METADATA
+      - Bank or card issuer (full name)
+      - Payment Due Date
+      - Total to Pay (in all present currencies)
 
-      NIVEL 2: TRANSCRIPCIÓN FIEL (ESPEJO) - MUY IMPORTANTE
-      Esta sección debe ser una copia EXACTA de la tabla de consumos tal como aparece en el PDF.
+      LEVEL 2: FAITHFUL TRANSCRIPTION (MIRROR) - VERY IMPORTANT
+      This section must be an EXACT COPY of the transaction table as it appears in the PDF.
       
-      REGLAS ESTRICTAS:
-      1. Usa los nombres de columnas EXACTOS del PDF (respeta mayúsculas, acentos, espacios)
-      2. Mantén los formatos de fecha y números SIN MODIFICAR (si dice "27/11/25", ponlo así)
-      3. Mantén los valores de texto exactamente como aparecen
-      4. Si una celda está vacía o tiene "-", déjala así
-      5. NO interpretes ni transformes nada, solo copia
-      6. Incluye TODAS las filas de la tabla, incluso impuestos, comisiones, pagos
-      7. Alinea correctamente: cada valor debe ir en su columna correspondiente
-      8. Si hay saltos de línea dentro de una celda, unifica el texto en una sola línea
-      9. Valida que todas las filas tengan la misma cantidad de columnas
+      STRICT RULES:
+      1. Use the EXACT column names from the PDF (respect uppercase, accents, spaces)
+      2. Keep date and number formats UNMODIFIED (if it says "27/11/25", keep it that way)
+      3. Keep text values exactly as they appear
+      4. If a cell is empty or has "-", leave it as is
+      5. DO NOT interpret or transform anything, just copy
+      6. Include ALL rows from the table, including taxes, fees, payments
+      7. Align correctly: each value must go in its corresponding column
+      8. If there are line breaks within a cell, unify the text into a single line
+      9. Validate that all rows have the same number of columns
       
-      FORMATO ESPERADO:
+      EXPECTED FORMAT:
       {
-        "columnas": ["FECHA", "TARJETA", "DETALLE", ...],  // Nombres ORIGINALES
-        "datos": [
-          ["27/11/25", "Naranja X", "COMISION...", ...],   // Valores ORIGINALES
+        "columns": ["FECHA", "TARJETA", "DETALLE", ...],  // ORIGINAL names
+        "rows": [
+          ["27/11/25", "Naranja X", "COMISION...", ...],   // ORIGINAL values
           ["15/08/25", "NX Visa", "CASTELLANAS", ...],
           ...
         ]
       }
 
-      NIVEL 3: NORMALIZACIÓN (ANÁLISIS)
-      Ahora SÍ transforma cada movimiento a un esquema estándar:
+      LEVEL 3: NORMALIZATION (ANALYSIS)
+      Now DO transform each transaction into a standard schema:
       
-      - date: Formato YYYY-MM-DD (convierte la fecha original)
-      - card: Nombre de la tarjeta o adicional
-      - description: Texto limpio del comercio
-      - installment: Formato "01/12" (Cuota actual / Total). Si no es cuota: null
-      - currency: Código ISO (ARS, USD, CNY, etc.)
-      - amount: Número float
-      - type: Clasifica el movimiento en uno de estos tipos:
-        * "consumo" - Compras normales
-        * "pago" - Pagos realizados (identifica por palabras: PAGO, PAYMENT, ABONO, 支付)
-        * "comision" - Comisiones bancarias
-        * "impuesto" - IVA, impuesto de sellos, etc.
-        * "devolucion" - Devoluciones o reintegros
+      - date: Format YYYY-MM-DD (convert the original date)
+      - card: Name of the card or cardholder
+      - description: Clean merchant text/description
+      - installment: Format "01/12" (Current installment / Total). If not an installment: null
+      - currency: ISO Code (ARS, USD, CNY, etc.)
+      - amount: Float number
+      - type: Classify the transaction into one of these types:
+        * "purchase" - Normal purchases/consumption
+        * "payment" - Payments made (identify by words: PAGO, PAYMENT, ABONO, 支付)
+        * "fee" - Bank fees/commissions
+        * "tax" - VAT, stamp duty, etc.
+        * "refund" - Returns or reimbursements
       
-      IMPORTANTE PARA DETECTAR PAGOS:
-      - Si el detalle contiene: "PAGO", "PAYMENT", "ABONO", "PAY", "付款", "支付" → type: "pago", amount: negativo
-      - Si el detalle contiene: "DEVOLUCION", "REFUND", "REINTEGRO" → type: "devolucion", amount: negativo
-      - Caso contrario → type: "consumo", amount: positivo (o el signo que indique el PDF)
+      IMPORTANT FOR DETECTING PAYMENTS:
+      - If detail contains: "PAGO", "PAYMENT", "ABONO", "PAY", "付款", "支付" -> type: "payment", amount: negative
+      - If detail contains: "DEVOLUCION", "REFUND", "REINTEGRO" -> type: "refund", amount: negative
+      - Otherwise -> type: "purchase", amount: positive (or whatever sign the PDF indicates)
 
-      NIVEL 4: FUTURO (Proyecciones)
-      - Busca secciones de "Cuotas a vencer", "Cuotas futuras", "Próximos vencimientos"
-      - Para cada mes futuro, extrae:
-        * mes: "Marzo/26" (formato del PDF)
-        * concepto: Descripción de qué cuota es (ej: "MERPAGO PASAJESCDP - Cuota 2/3")
-        * monto: Valor numérico
-        * moneda: Código ISO
+      LEVEL 4: FUTURE (Projections)
+      - Look for sections like "Installments to come", "Future installments", "Next due dates"
+      - For each future month, extract:
+        * month: "March/26" (PDF format)
+        * concept: Description of the installment (e.g., "MERPAGO PASAJESCDP - Installment 2/3")
+        * amount: Numeric value
+        * currency: ISO Code
 
-      FORMATO DE SALIDA (JSON ESTRICTO):
+      OUTPUT FORMAT (STRICT JSON):
       {
-        "idioma_detectado": "codigo_iso_idioma",
-        "moneda_principal": "codigo_iso_moneda",
+        "detected_language": "iso_code",
+        "main_currency": "iso_code",
         "metadata": {
-          "banco": "String",
-          "vencimiento": "String",
-          "totales": [
-            { "moneda": "ARS", "monto": number }
+          "bank": "String",
+          "due_date": "String",
+          "totals": [
+            { "currency": "ARS", "amount": number }
           ]
         },
-        "espejo": {
-          "columnas": ["Col1", "Col2"...],
-          "datos": [ ["Val1", "Val2"...] ]
+        "mirror": {
+          "columns": ["Col1", "Col2"...],
+          "rows": [ ["Val1", "Val2"...] ]
         },
-        "auditoria": [
+        "analysis": [
           {
             "date": "YYYY-MM-DD",
             "card": "String",
             "description": "String",
-            "installment": "String" o null,
+            "installment": "String" or null,
             "currency": "String",
             "amount": number,
-            "type": "consumo|pago|comision|impuesto|devolucion"
+            "type": "purchase|payment|fee|tax|refund"
           }
         ],
-        "futuro": [
-          { "mes": "String", "concepto": "String", "monto": number, "moneda": "String" }
+        "future": [
+          { "month": "String", "concept": "String", "amount": number, "currency": "String" }
         ]
       }
     `;
 
-export const promptBanco = `
-      Eres un experto en extracción de datos de extractos bancarios. Analiza este documento en CUATRO NIVELES.
+export const bankPrompt = `
+      You are an expert in extracting data from bank account statements. Analyze this document in FOUR LEVELS.
 
-      NIVEL 0: DETECCIÓN DE CONTEXTO
-      - Detecta el idioma del documento (código ISO 639-1: es, en, zh, ja, pt, fr, de, etc.)
-      - Detecta la MONEDA PRINCIPAL del extracto (código ISO 4217: USD, EUR, ARS, CNY, JPY, BRL, etc.)
-      - Si hay movimientos en múltiples monedas, identifica la principal
+      LEVEL 0: CONTEXT DETECTION
+      - Detect the document language (ISO 639-1 code: es, en, zh, ja, pt, fr, de, etc.)
+      - Detect the MAIN CURRENCY of the statement (ISO 4217 code: USD, EUR, ARS, CNY, JPY, BRL, etc.)
+      - If there are transactions in multiple currencies, identify the main one.
 
-      NIVEL 1: METADATOS CLAVE
-      - Banco o entidad financiera (nombre completo)
-      - Número de cuenta (completo o parcial)
-      - Período del extracto (fecha inicio - fecha fin)
-      - Saldo Inicial (si está disponible, sino null)
-      - Saldo Final (si está disponible, sino null)
+      LEVEL 1: KEY METADATA
+      - Bank or financial institution (full name)
+      - Account number (full or partial)
+      - Statement Period (start date - end date)
+      - Opening Balance (if available, else null)
+      - Closing Balance (if available, else null)
 
-      NIVEL 2: TRANSCRIPCIÓN FIEL (ESPEJO)
-      Esta sección debe ser una copia EXACTA de la tabla de movimientos tal como aparece en el PDF.
+      LEVEL 2: FAITHFUL TRANSCRIPTION (MIRROR)
+      This section must be an EXACT COPY of the transaction table as it appears in the PDF.
       
-      REGLAS ESTRICTAS:
-      1. Usa los nombres de columnas EXACTOS del PDF (respeta mayúsculas, acentos, espacios)
-      2. Mantén los formatos de fecha y números SIN MODIFICAR (si dice "15/01/25", ponlo así)
-      3. Mantén los valores de texto exactamente como aparecen
-      4. Si una celda está vacía o tiene "-", déjala así
-      5. NO interpretes ni transformes nada, solo copia
-      6. Incluye TODAS las filas de la tabla de movimientos
-      7. Alinea correctamente: cada valor debe ir en su columna correspondiente
-      8. Si hay saltos de línea dentro de una celda, unifica el texto en una sola línea
-      9. Valida que todas las filas tengan la misma cantidad de columnas
+      STRICT RULES:
+      1. Use the EXACT column names from the PDF (respect uppercase, accents, spaces)
+      2. Keep date and number formats UNMODIFIED (if it says "15/01/25", keep it that way)
+      3. Keep text values exactly as they appear
+      4. If a cell is empty or has "-", leave it as is
+      5. DO NOT interpret or transform anything, just copy
+      6. Include ALL rows from the transaction table
+      7. Align correctly: each value must go in its corresponding column
+      8. If there are line breaks within a cell, unify the text into a single line
+      9. Validate that all rows have the same number of columns
       
-      FORMATO ESPERADO:
+      EXPECTED FORMAT:
       {
-        "columnas": ["FECHA", "DESCRIPCIÓN", "DÉBITO", "CRÉDITO", "SALDO"],
-        "datos": [
+        "columns": ["FECHA", "DESCRIPCIÓN", "DÉBITO", "CRÉDITO", "SALDO"],
+        "rows": [
           ["15/01/25", "TRANSFERENCIA RECIBIDA", "", "5000.00", "25000.00"],
           ["16/01/25", "COMPRA EN COMERCIO", "1500.00", "", "23500.00"],
           ...
         ]
       }
 
-      NIVEL 3: NORMALIZACIÓN (ANÁLISIS)
-      Ahora SÍ transforma cada movimiento a un esquema estándar:
+      LEVEL 3: NORMALIZATION (ANALYSIS)
+      Now DO transform each transaction into a standard schema:
       
-      - date: Formato YYYY-MM-DD (convierte la fecha original)
-      - description: Texto limpio del movimiento
-      - amount_out: Número positivo para egresos/débitos (si no es egreso: 0)
-      - amount_in: Número positivo para ingresos/créditos (si no es ingreso: 0)
-      - currency: Código ISO de la moneda de ESTE movimiento específico (puede variar por fila)
-      - balance: Saldo después de este movimiento (número)
+      - date: Format YYYY-MM-DD (convert the original date)
+      - description: Clean transaction text
+      - amount_out: Positive number for debits/outflows (if not a debit: 0)
+      - amount_in: Positive number for credits/inflows (if not a credit: 0)
+      - currency: ISO Code for THIS specific transaction (can vary per row)
+      - balance: Balance after this transaction (number)
       
-      IMPORTANTE PARA DETECTAR INGRESOS VS EGRESOS:
-      - Analiza las columnas del PDF:
-        * Si hay columnas separadas "DÉBITO" y "CRÉDITO" → usa esa info
-        * Si hay una sola columna con signos → negativo = egreso, positivo = ingreso
-        * Si no hay signo → analiza la descripción (PAGO, COMPRA, RETIRO = egreso)
-      - amount_out y amount_in SIEMPRE son positivos (el signo está implícito en la columna)
-      - Si es egreso: amount_out = valor, amount_in = 0
-      - Si es ingreso: amount_in = valor, amount_out = 0
+      IMPORTANT FOR DETECTING INFLOWS VS OUTFLOWS:
+      - Analyze the PDF columns:
+        * If there are separate "DEBIT" and "CREDIT" columns -> use that info
+        * If there is a single column with signs -> negative = debit (out), positive = credit (in)
+        * If no signs -> analyze description (PAYMENT, PURCHASE, WITHDRAWAL = debit)
+      - amount_out and amount_in are ALWAYS positive (the sign is implied by the column)
+      - If debit: amount_out = value, amount_in = 0
+      - If credit: amount_in = value, amount_out = 0
 
-      FORMATO DE SALIDA (JSON ESTRICTO):
+      OUTPUT FORMAT (STRICT JSON):
       {
-        "idioma_detectado": "codigo_iso_idioma",
-        "moneda_principal": "codigo_iso_moneda",
+        "detected_language": "iso_code",
+        "main_currency": "iso_code",
         "metadata": {
-          "banco": "String",
-          "cuenta": "String",
-          "periodo": "String",
-          "saldo_inicial": number o null,
-          "saldo_final": number o null
+          "bank": "String",
+          "account_number": "String",
+          "period": "String",
+          "opening_balance": number or null,
+          "closing_balance": number or null
         },
-        "espejo": {
-          "columnas": ["Col1", "Col2"...],
-          "datos": [ ["Val1", "Val2"...] ]
+        "mirror": {
+          "columns": ["Col1", "Col2"...],
+          "rows": [ ["Val1", "Val2"...] ]
         },
-        "auditoria": [
+        "analysis": [
           {
             "date": "YYYY-MM-DD",
             "description": "String",

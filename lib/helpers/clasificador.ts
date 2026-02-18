@@ -1,59 +1,62 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { promptClasificacion } from "./prompts";
+import { classificationPrompt } from "./prompts";
 
-export type TipoDocumento = "CREDITO" | "BANCO" | "INVALIDO";
+export type DocumentType = "CREDIT" | "BANK" | "INVALID";
 
-export interface ResultadoClasificacion {
-  tipo: TipoDocumento;
-  razon: string;
+export interface ClassificationResult {
+  type: DocumentType;
+  reason: string;
 }
 
-export async function clasificarDocumento(
+export async function classifyDocument(
   apiKey: string,
   base64Data: string
-): Promise<ResultadoClasificacion> {
+): Promise<ClassificationResult> {
   
   try {
-    // 1. Crear instancia de Gemini
+    // 1. Create Gemini instance
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-    // 2. Llamar a la API con el prompt de clasificación
+    // 2. Call API with classification prompt
     const result = await model.generateContent([
-      promptClasificacion,
+      classificationPrompt,
       { inlineData: { data: base64Data, mimeType: "application/pdf" } },
     ]);
 
-    // 3. Extraer texto de la respuesta
+    // 3. Extract text from response
     const textResponse = result.response.text();
-    console.log("🔍 Respuesta de clasificación:", textResponse);
+    console.log("🔍 Classification response:", textResponse);
 
-    // 4. Extraer JSON (buscar entre llaves)
+    // 4. Extract JSON (find between braces)
     const jsonStart = textResponse.indexOf('{');
     const jsonEnd = textResponse.lastIndexOf('}') + 1;
     
     if (jsonStart === -1 || jsonEnd === 0) {
-      throw new Error("No se encontró JSON en la respuesta de clasificación");
+      throw new Error("No JSON found in classification response");
     }
 
-    const jsonRaw = textResponse.substring(jsonStart, jsonEnd);
-    const clasificacion = JSON.parse(jsonRaw) as ResultadoClasificacion;
+    const rawJson = textResponse.substring(jsonStart, jsonEnd);
+    
+    // Parse mapping keys (if the AI returns keys in Spanish by mistake, we could map them here, 
+    // but the prompt explicitly asks for "type" and "reason")
+    const classification = JSON.parse(rawJson) as ClassificationResult;
 
-    // 5. Validar estructura del JSON
-    if (!clasificacion.tipo || !["CREDITO", "BANCO", "INVALIDO"].includes(clasificacion.tipo)) {
-      throw new Error("Tipo de documento no válido en la respuesta");
+    // 5. Validate JSON structure
+    if (!classification.type || !["CREDIT", "BANK", "INVALID"].includes(classification.type)) {
+      throw new Error(`Invalid document type received: ${classification.type}`);
     }
 
-    console.log("✅ Clasificación exitosa:", clasificacion);
-    return clasificacion;
+    console.log("✅ Classification successful:", classification);
+    return classification;
 
   } catch (error: any) {
-    console.error("❌ Error en clasificación:", error);
+    console.error("❌ Classification error:", error);
     
-    // Fallback: si algo falla, retornar INVALIDO
+    // Fallback: if something fails, return INVALID
     return {
-      tipo: "INVALIDO",
-      razon: `Error al clasificar: ${error.message || "Error desconocido"}`
+      type: "INVALID",
+      reason: `Error classifying: ${error.message || "Unknown error"}`
     };
   }
 }

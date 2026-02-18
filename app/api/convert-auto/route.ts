@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { clasificarDocumento, TipoDocumento } from "@/lib/helpers/clasificador";
-import { generarExcelCredito, generarExcelBanco } from "@/lib/helpers/excelGenerators";
-import { promptCredito, promptBanco } from "@/lib/helpers/prompts";
+import { classifyDocument } from "@/lib/helpers/clasificador"; 
+import { generateCreditExcel, generateBankExcel } from "@/lib/helpers/excelGenerators";
+import { creditPrompt, bankPrompt } from "@/lib/helpers/prompts";
 
 // ========================================
-// CONFIGURACIÓN
+// CONFIGURATION
 // ========================================
 
 const API_KEY = process.env.GEMINI_API_KEY as string;
 
 if (!API_KEY) {
-  throw new Error("Falta la GEMINI_API_KEY en las variables de entorno");
+  throw new Error("Missing GEMINI_API_KEY in environment variables");
 }
 
 // ========================================
-// ENDPOINT PRINCIPAL
+// MAIN ENDPOINT
 // ========================================
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("📥 Iniciando conversión automática...");
+    console.log("📥 Starting automatic conversion...");
 
     // ==========================================
-    // PASO 1: RECIBIR Y VALIDAR ARCHIVO
+    // STEP 1: RECEIVE AND VALIDATE FILE
     // ==========================================
     
     const formData = await req.formData();
@@ -31,54 +31,56 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ 
-        error: "No se recibió ningún archivo" 
+        error: "No file received" 
       }, { status: 400 });
     }
 
-    console.log(`📄 Archivo recibido: ${file.name} (${file.size} bytes)`);
+    console.log(`📄 File received: ${file.name} (${file.size} bytes)`);
 
     // ==========================================
-    // PASO 2: CONVERTIR A BASE64
+    // STEP 2: CONVERT TO BASE64
     // ==========================================
     
     const arrayBuffer = await file.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString("base64");
 
     // ==========================================
-    // PASO 3: CLASIFICAR DOCUMENTO (1ra llamada a Gemini)
+    // STEP 3: CLASSIFY DOCUMENT (1st Gemini call)
     // ==========================================
     
-    console.log("🔍 Iniciando clasificación del documento...");
+    console.log("🔍 Starting document classification...");
     
-    const clasificacion = await clasificarDocumento(API_KEY, base64Data);
+    // Now calls classifyDocument and expects { type: "CREDIT" | "BANK" | "INVALID", ... }
+    const classification = await classifyDocument(API_KEY, base64Data);
     
-    console.log(`✅ Clasificación completada:`, clasificacion);
+    console.log(`✅ Classification completed:`, classification);
 
     // ==========================================
-    // PASO 4: VALIDAR QUE SEA DOCUMENTO VÁLIDO
+    // STEP 4: VALIDATE DOCUMENT TYPE
     // ==========================================
     
-    if (clasificacion.tipo === "INVALIDO") {
-      console.warn("⚠️ Documento rechazado:", clasificacion.razon);
+    if (classification.type === "INVALID") {
+      console.warn("⚠️ Document rejected:", classification.reason);
       
       return NextResponse.json({ 
-        error: `Documento no válido: ${clasificacion.razon}`,
-        detalle: "Este archivo no parece ser un resumen de tarjeta de crédito ni un extracto bancario."
+        error: `Invalid document: ${classification.reason}`,
+        details: "This file does not appear to be a credit card summary or bank statement."
       }, { status: 400 });
     }
 
     // ==========================================
-    // PASO 5: ELEGIR PROMPT SEGÚN TIPO DETECTADO
+    // STEP 5: SELECT PROMPT BASED ON TYPE
     // ==========================================
     
-    const prompt = clasificacion.tipo === "CREDITO" ? promptCredito : promptBanco;
-    const tipoTexto = clasificacion.tipo === "CREDITO" ? "Tarjeta de Crédito" : "Extracto Bancario";
+    // Logic updated to use English Enum values
+    const prompt = classification.type === "CREDIT" ? creditPrompt : bankPrompt;
+    const documentTypeLabel = classification.type === "CREDIT" ? "Credit Card" : "Bank Statement";
     
-    console.log(`📋 Tipo detectado: ${tipoTexto}`);
-    console.log(`🚀 Iniciando análisis completo con prompt de ${tipoTexto}...`);
+    console.log(`📋 Detected type: ${documentTypeLabel}`);
+    console.log(`🚀 Starting full analysis with ${documentTypeLabel} prompt...`);
 
     // ==========================================
-    // PASO 6: ANÁLISIS COMPLETO (2da llamada a Gemini)
+    // STEP 6: FULL ANALYSIS (2nd Gemini call)
     // ==========================================
     
     const genAI = new GoogleGenerativeAI(API_KEY);
@@ -90,73 +92,75 @@ export async function POST(req: NextRequest) {
     ]);
 
     // ==========================================
-    // PASO 7: PARSEAR RESPUESTA JSON
+    // STEP 7: PARSE JSON RESPONSE
     // ==========================================
     
     const textResponse = result.response.text();
     
-    console.log("📦 Respuesta recibida, parseando JSON...");
+    console.log("📦 Response received, parsing JSON...");
     
     const jsonStart = textResponse.indexOf('{');
     const jsonEnd = textResponse.lastIndexOf('}') + 1;
 
     if (jsonStart === -1 || jsonEnd === 0) {
-      throw new Error("No se encontró JSON válido en la respuesta de la IA");
+      throw new Error("No valid JSON found in AI response");
     }
 
-    const jsonRaw = textResponse.substring(jsonStart, jsonEnd);
+    const rawJson = textResponse.substring(jsonStart, jsonEnd);
     
     let data;
     try {
-      data = JSON.parse(jsonRaw);
+      data = JSON.parse(rawJson);
     } catch (parseError) {
-      console.error("❌ Error parseando JSON:", jsonRaw.substring(0, 200));
-      throw new Error("La IA no devolvió un JSON válido.");
+      console.error("❌ Error parsing JSON:", rawJson.substring(0, 200));
+      throw new Error("The AI did not return a valid JSON.");
     }
 
-    console.log("✅ JSON parseado correctamente");
+    console.log("✅ JSON parsed successfully");
 
     // ==========================================
-    // PASO 8: GENERAR EXCEL SEGÚN TIPO
+    // STEP 8: GENERATE EXCEL BASED ON TYPE
     // ==========================================
     
-    console.log(`📊 Generando Excel de ${tipoTexto}...`);
+    console.log(`📊 Generating ${documentTypeLabel} Excel...`);
 
     let excelBuffer: Buffer;
-    let nombreArchivo: string;
+    let fileName: string;
 
-    if (clasificacion.tipo === "CREDITO") {
-      excelBuffer = await generarExcelCredito(data);
-      nombreArchivo = `${data.metadata.banco || "Desconocido"}.xlsx`;
+    // Use English keys to access metadata (data.metadata.bank)
+    const bankName = data.metadata.bank || "Unknown";
+
+    if (classification.type === "CREDIT") {
+      excelBuffer = await generateCreditExcel(data);
+      fileName = `${bankName}.xlsx`;
     } else {
-      excelBuffer = await generarExcelBanco(data);
-      nombreArchivo = `${data.metadata.banco || "Desconocido"}.xlsx`;
+      excelBuffer = await generateBankExcel(data);
+      fileName = `${bankName}.xlsx`;
     }
 
-    console.log(`✅ Excel generado: ${nombreArchivo}`);
+    console.log(`✅ Excel generated: ${fileName}`);
 
     // ==========================================
-    // PASO 9: RETORNAR ARCHIVO
+    // STEP 9: RETURN FILE
     // ==========================================
     
     return new NextResponse(new Uint8Array(excelBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="${nombreArchivo}"`,
-        // Headers adicionales para el frontend
-        "X-Document-Type": clasificacion.tipo,
-        "X-Bank-Name": data.metadata.banco || "Desconocido"
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        // Headers for frontend (Updated values)
+        "X-Document-Type": classification.type,
+        "X-Bank-Name": bankName
       },
     });
 
   } catch (error: any) {
-    console.error("❌ Error fatal en conversión:", error);
+    console.error("❌ Fatal conversion error:", error);
     
-    // Respuesta de error detallada
     return NextResponse.json({ 
-      error: error.message || "Error desconocido al procesar el PDF",
-      detalle: "Por favor verifica que el archivo sea un PDF válido de resumen bancario o de tarjeta de crédito."
+      error: error.message || "Unknown error processing PDF",
+      details: "Please verify that the file is a valid bank statement or credit card PDF."
     }, { status: 500 });
   }
 }
