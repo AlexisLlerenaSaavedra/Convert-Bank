@@ -1,24 +1,24 @@
-    export const classificationPrompt = `
-Classify this PDF into ONE category:
+export const classificationPrompt = `
+    Classify this PDF into ONE category:
 
-1. CREDIT: Credit card summary/statement
-   Keywords: "cuota", "1/", "2/12", "vencimiento" (due date), "consumo", "tarjeta", "visa", "mastercard", "limit"
+    1. CREDIT: Credit card summary/statement
+      Keywords: "cuota", "1/", "2/12", "vencimiento" (due date), "consumo", "tarjeta", "visa", "mastercard", "limit"
 
-2. BANK: Bank account statement
-   Keywords: "débito" (debit), "crédito" (credit), "saldo" (balance), "CBU", "IBAN", "transferencia", "movimientos", "cuenta"
+    2. BANK: Bank account statement
+      Keywords: "débito" (debit), "crédito" (credit), "saldo" (balance), "CBU", "IBAN", "transferencia", "movimientos", "cuenta"
 
-3. INVALID: Any other document (invoice, receipt, contract, investment report, etc.)
+    3. INVALID: Any other document (invoice, receipt, contract, investment report, etc.)
 
-Analyze ONLY the first page if possible for faster classification.
+    Analyze ONLY the first page if possible for faster classification.
 
-Reply ONLY with this JSON, no markdown, no additional explanations:
-{"type": "CREDIT"|"BANK"|"INVALID", "reason": "max 8 words"}
+    Reply ONLY with this JSON, no markdown, no additional explanations:
+    {"type": "CREDIT"|"BANK"|"INVALID", "reason": "max 8 words"}
 
-Valid examples:
-{"type": "CREDIT", "reason": "contains installments and due date"}
-{"type": "BANK", "reason": "transactions with debits and credits"}
-{"type": "INVALID", "reason": "utility bill"}
-`;
+    Valid examples:
+    {"type": "CREDIT", "reason": "contains installments and due date"}
+    {"type": "BANK", "reason": "transactions with debits and credits"}
+    {"type": "INVALID", "reason": "utility bill"}
+    `;
 
 export const creditPrompt = `
       You are an expert in extracting data from credit card statements. Analyze this document in FOUR LEVELS.
