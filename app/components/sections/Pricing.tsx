@@ -64,8 +64,7 @@ export function Pricing() {
               </div>
               <p style={{ color: "#475569", fontSize: 14, marginBottom: 28 }}>{p.desc}</p>
               <button style={{
-                width: "100%", padding: "14px 0", borderRadius: 12, cursor: "pointer",
-                fontWeight: 700, fontSize: 15, marginBottom: 28, color: "#fff",
+                width: "100%", padding: "14px 0", fontSize: 15, marginBottom: 28,
                 ...(p.highlight
                   ? { ...primaryBtn, border: "none", boxShadow: "none" }
                   : { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }),
