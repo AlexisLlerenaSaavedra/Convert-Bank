@@ -281,3 +281,93 @@ export function getTranslation(language: string, isCredit: boolean): any {
 export function getCurrencyFormat(currency: string): string {
   return CURRENCY_CONFIG[currency]?.format || '#,##0.00';
 }
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+export const NAV_LINKS = ["Features", "How It Works", "Pricing", "FAQ"];
+
+export const FEATURES = [
+  {
+    icon: "🤖",
+    title: "AI-Powered Detection",
+    desc: "Automatically identifies whether your PDF is a bank statement or credit card summary — no manual selection needed.",
+  },
+  {
+    icon: "⚡",
+    title: "Instant Conversion",
+    desc: "Get your structured Excel file in seconds. No waiting, no manual data entry.",
+  },
+  {
+    icon: "🏦",
+    title: "Any Bank, Any Format",
+    desc: "Works with statements from thousands of banks worldwide, regardless of layout or formatting.",
+  },
+  {
+    icon: "🔒",
+    title: "Secure Processing",
+    desc: "Your documents are processed securely and never stored after conversion is complete.",
+  },
+];
+
+export const STEPS = [
+  { num: "01", title: "Upload your PDF", desc: "Drag & drop your bank statement or credit card summary PDF." },
+  { num: "02", title: "AI Detection", desc: "Our AI automatically classifies the document type and bank." },
+  { num: "03", title: "Download Excel", desc: "Get a clean, structured Excel file ready for analysis." },
+];
+
+export const PLANS = [
+  {
+    name: "Starter",
+    monthlyPrice: 10,
+    desc: "For individuals with occasional needs.",
+    features: ["50 conversions/month", "Bank & Credit Card PDFs", "Excel export", "Email support"],
+    highlight: false,
+  },
+  {
+    name: "Professional",
+    monthlyPrice: 25,
+    desc: "For accountants and finance teams.",
+    features: ["200 conversions/month", "Bank & Credit Card PDFs", "Excel export", "Priority support", "Batch processing"],
+    highlight: true,
+  },
+  {
+    name: "Business",
+    monthlyPrice: 60,
+    desc: "High-volume processing for enterprises.",
+    features: ["Unlimited conversions", "Bank & Credit Card PDFs", "Excel export", "Dedicated support", "Batch processing", "API access"],
+    highlight: false,
+  },
+];
+
+export const FAQS = [
+  {
+    q: "What types of documents are supported?",
+    a: "We support bank statements and credit card summaries in PDF format from any bank or financial institution worldwide.",
+  },
+  {
+    q: "How does the auto-detection work?",
+    a: "Our AI analyzes the structure and content of your PDF and automatically determines whether it's a bank statement or credit card summary — you don't need to tell us.",
+  },
+  {
+    q: "What does the Excel output look like?",
+    a: "The output is a clean spreadsheet with columns for date, description, amount, and balance — ready for accounting, auditing, or personal finance analysis.",
+  },
+  {
+    q: "Is my data secure?",
+    a: "Yes. Files are processed in real-time and never stored on our servers after conversion. We take privacy seriously.",
+  },
+  {
+    q: "Can I try it before paying?",
+    a: "Yes — sign up and get 3 free conversions to test the service with your own documents.",
+  },
+];
+
+export const DEMO_ROWS = [
+  { date: "01/15/2025", desc: "Direct Deposit - Payroll", amount: "+3,450.00", balance: "5,230.44" },
+  { date: "01/16/2025", desc: "Amazon.com Purchase", amount: "-89.99", balance: "5,140.45" },
+  { date: "01/17/2025", desc: "Whole Foods Market", amount: "-156.32", balance: "4,984.13" },
+  { date: "01/18/2025", desc: "Netflix Subscription", amount: "-15.99", balance: "4,968.14" },
+  { date: "01/19/2025", desc: "Venmo Payment Received", amount: "+45.00", balance: "5,013.14" },
+];
