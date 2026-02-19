@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-export function Converter({ sectionRef }: { sectionRef: React.RefObject<HTMLElement> }) {
+export function Converter({ sectionRef }: { sectionRef: React.RefObject<HTMLElement|null> }) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
