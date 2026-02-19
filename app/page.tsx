@@ -12,7 +12,7 @@ import { CTABanner } from "./components/sections/CTABanner";
 import { Footer } from "./components/layout/Footer";
 
 export default function Home() {
-  const converterRef = useRef<HTMLElement>(null);
+  const converterRef = useRef<HTMLElement|null>(null);
   const scrollToConverter = () =>
     converterRef.current?.scrollIntoView({ behavior: "smooth" });
 
