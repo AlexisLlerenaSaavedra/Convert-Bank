@@ -4,6 +4,7 @@
 import { DEMO_ROWS } from "@/lib/constants";
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
 import { card, primaryBtn, gradientText } from "@/lib/styles";
+import router from "next/router";
 
 export function Hero({ onConvertClick }: { onConvertClick: () => void }) {
   return (
@@ -37,7 +38,7 @@ export function Hero({ onConvertClick }: { onConvertClick: () => void }) {
 
       <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 72 }}>
         <button
-          onClick={onConvertClick}
+          onClick={() => router.push("/auth/register")}
           style={{ ...primaryBtn, padding: "16px 36px", fontSize: 17 }}
         >
           Start Converting — It's Free ↗
